@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30717.126
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureSight.Monitoring", "AzureSight.Monitoring\AzureSight.Monitoring.csproj", "{FFE7EB9E-498B-43F5-87CE-12D02252521A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureSight.Api", "AzureSight.Api\AzureSight.Api.csproj", "{26D8B1F6-CA6E-427A-9DD5-EED4C00063BC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FFE7EB9E-498B-43F5-87CE-12D02252521A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFE7EB9E-498B-43F5-87CE-12D02252521A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFE7EB9E-498B-43F5-87CE-12D02252521A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFE7EB9E-498B-43F5-87CE-12D02252521A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{26D8B1F6-CA6E-427A-9DD5-EED4C00063BC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26D8B1F6-CA6E-427A-9DD5-EED4C00063BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{26D8B1F6-CA6E-427A-9DD5-EED4C00063BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{26D8B1F6-CA6E-427A-9DD5-EED4C00063BC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {859763D5-B9A4-4698-9E19-E3AD9B6C4A63}
+	EndGlobalSection
+EndGlobal
