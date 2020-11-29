@@ -2,6 +2,7 @@
 using AzureSight.Monitoring.Abstracts;
 using AzureSight.Monitoring.Models;
 using Microsoft.Azure.Management.AlertsManagement;
+using Microsoft.Azure.Management.AlertsManagement.Models;
 using Microsoft.Azure.Management.Monitor;
 using Microsoft.Azure.Management.Monitor.Models;
 using Microsoft.Rest;
@@ -18,6 +19,7 @@ namespace AzureSight.Monitoring
     {
         MonitorManagementClient clMonitor;
         AlertsManagementClient clAlerts;
+        List<Alert> lstAlerts = new();
         private readonly IAzureResourceUtils _azureResourceUtils;
         public AlertRuleService(IAzureResourceUtils azureResourceUtils)
         {
@@ -25,43 +27,41 @@ namespace AzureSight.Monitoring
         }
 
 
-        private async Task SetAlertOccurrencies(AlertRule current, string alertRuleID)
+        private async Task InitializeAlertsAsync()
         {
-            bool bugAllAlertRetrieved = false;
-            var alertsTriggered = await clAlerts.Alerts.GetAllAsync(alertRule: alertRuleID);
-            if (alertsTriggered.Count() == 0)
-            {
-                bugAllAlertRetrieved = true;
-                //NOTE: There is a "bug", the alertRule filter may want the alert rule ID in the URL Encoded format (especially the metric alert with spaces in the name) and may not return all the results because are returned with different cases, so all the alert are retrieved and filtered locally
-                alertsTriggered = await clAlerts.Alerts.GetAllAsync();
-            }
+            var currentAlerts = await clAlerts.Alerts.GetAllAsync(timeRange: "30d");
             do
             {
-                foreach (var item in alertsTriggered)
-                {
-                    if (bugAllAlertRetrieved)
-                    {
-                        var resourceNameStartIndex = alertRuleID.LastIndexOf("/") + 1;
-                        var currentAlertOccurrenceRuleToFind = alertRuleID.Substring(0, resourceNameStartIndex) + Uri.EscapeUriString(alertRuleID.Substring(resourceNameStartIndex));
-                        if (item.Properties.Essentials.AlertRule.ToLower() != currentAlertOccurrenceRuleToFind.ToLower()) continue;
-                    }
+                lstAlerts.AddRange(currentAlerts);
+                if (currentAlerts.NextPageLink != null) currentAlerts = await clAlerts.Alerts.GetAllNextAsync(currentAlerts.NextPageLink);
+            } while (currentAlerts.NextPageLink != null);
+        }
 
-                    current.Occurrencies++;
-                    if (item.Properties.Essentials.StartDateTime.HasValue && current.OccurencyFirstDate == null ||
-                        item.Properties.Essentials.StartDateTime < current.OccurencyFirstDate)
-                    {
-                        current.OccurencyFirstDate = item.Properties.Essentials.StartDateTime;
-                    }
-                    if (item.Properties.Essentials.StartDateTime.HasValue && current.OccurencyLastDate == null ||
-                        item.Properties.Essentials.StartDateTime > current.OccurencyLastDate)
-                    {
-                        current.OccurencyLastDate = item.Properties.Essentials.StartDateTime;
-                        current.OccurrencyLastCondition = item.Properties.Essentials.MonitorCondition;
-                        current.OccurencyLastDateResolved = item.Properties.Essentials.MonitorConditionResolvedDateTime;
-                    }
+        private void SetAlertOccurrencies(AlertRule current, string alertRuleID)
+        {
+            //NOTE: There is a "bug", the alertRule filter may want the alert rule ID in the URL Encoded format (especially the metric alert with spaces in the name) and may not return all the results because are returned with different cases, so all the alert are retrieved and filtered locally
+            var alertsTriggered = lstAlerts.Where(x => x.Properties.Essentials.AlertRule.ToLower() == alertRuleID.ToLower());
+            //Add Uri encoded alert rule
+            var resourceNameStartIndex = alertRuleID.LastIndexOf("/") + 1;
+            var currentAlertOccurrenceRuleToFind = alertRuleID.Substring(0, resourceNameStartIndex) + Uri.EscapeUriString(alertRuleID.Substring(resourceNameStartIndex));
+            alertsTriggered = alertsTriggered.Union(lstAlerts.Where(x => x.Properties.Essentials.AlertRule.ToLower() == currentAlertOccurrenceRuleToFind.ToLower()));
+
+            foreach (var item in alertsTriggered)
+            {
+                current.Occurrencies++;
+                if (item.Properties.Essentials.StartDateTime.HasValue && current.OccurencyFirstDate == null ||
+                    item.Properties.Essentials.StartDateTime < current.OccurencyFirstDate)
+                {
+                    current.OccurencyFirstDate = item.Properties.Essentials.StartDateTime;
                 }
-                if (alertsTriggered.NextPageLink != null) alertsTriggered = await clAlerts.Alerts.GetAllNextAsync(alertsTriggered.NextPageLink);
-            } while (alertsTriggered.NextPageLink != null);
+                if (item.Properties.Essentials.StartDateTime.HasValue && current.OccurencyLastDate == null ||
+                    item.Properties.Essentials.StartDateTime > current.OccurencyLastDate)
+                {
+                    current.OccurencyLastDate = item.Properties.Essentials.StartDateTime;
+                    current.OccurrencyLastCondition = item.Properties.Essentials.MonitorCondition;
+                    current.OccurencyLastDateResolved = item.Properties.Essentials.MonitorConditionResolvedDateTime;
+                }
+            }
         }
 
 
@@ -71,6 +71,7 @@ namespace AzureSight.Monitoring
             ServiceClientCredentials serviceClientCreds = new TokenCredentials(accessToken);
             clMonitor = new MonitorManagementClient(serviceClientCreds) { SubscriptionId = subscriptionID };
             clAlerts = new AlertsManagementClient(serviceClientCreds) { SubscriptionId = subscriptionID };
+            await InitializeAlertsAsync();
             var scheduledQueryAlerts = await clMonitor.ScheduledQueryRules.ListBySubscriptionAsync();
             foreach (var item in scheduledQueryAlerts)
             {
@@ -88,7 +89,7 @@ namespace AzureSight.Monitoring
                 rule.ResourceType = resourceInfo.ResourceType;
                 rule.SignalType = "Log search";
 
-                await SetAlertOccurrencies(rule, item.Id);
+                SetAlertOccurrencies(rule, item.Id);
 
                 lstResults.Add(rule);
             }
@@ -120,7 +121,7 @@ namespace AzureSight.Monitoring
                 rule.ResourceType = item.TargetResourceType;
                 rule.SignalType = "Metrics";
 
-                await SetAlertOccurrencies(rule, item.Id);
+                SetAlertOccurrencies(rule, item.Id);
 
                 lstResults.Add(rule);
             }
