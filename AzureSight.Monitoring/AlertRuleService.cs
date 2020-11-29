@@ -107,7 +107,15 @@ namespace AzureSight.Monitoring
 
                 var resourceInfo = _azureResourceUtils.GetInfoFromResourceID(item.Scopes.First());
 
-                rule.Threshold = string.Join(",", (item.Criteria as MetricAlertSingleResourceMultipleMetricCriteria).AllOf.Select(x => x.Threshold.ToString()));
+                if (item.Criteria is MetricAlertMultipleResourceMultipleMetricCriteria)
+                {
+                    rule.Threshold = string.Join(",", (item.Criteria as MetricAlertMultipleResourceMultipleMetricCriteria).AllOf.Select(x => x.Name.ToString()));
+                }
+                else if (item.Criteria is MetricAlertSingleResourceMultipleMetricCriteria)
+                {
+                    rule.Threshold = string.Join(",", (item.Criteria as MetricAlertSingleResourceMultipleMetricCriteria).AllOf.Select(x => x.Threshold.ToString()));
+                }
+
                 rule.Resource = resourceInfo.Name;
                 rule.ResourceType = item.TargetResourceType;
                 rule.SignalType = "Metrics";
