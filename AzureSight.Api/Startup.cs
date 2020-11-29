@@ -1,3 +1,5 @@
+using AzureSight.Core;
+using AzureSight.Core.Abstracts;
 using AzureSight.Monitoring;
 using AzureSight.Monitoring.Abstracts;
 using Microsoft.AspNetCore.Builder;
@@ -34,7 +36,7 @@ namespace AzureSight.Api
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "AzureSight.Api", Version = "v1" });
             });
-
+            services.AddTransient<IAzureResourceUtils, AzureResourceUtils>();
             services.AddTransient<IAlertRuleService, AlertRuleService>();
         }
 

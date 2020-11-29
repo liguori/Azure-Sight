@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\AzureSight.Core\AzureSight.Core.csproj" />
     <ProjectReference Include="..\AzureSight.Monitoring\AzureSight.Monitoring.csproj" />
   </ItemGroup>
 
